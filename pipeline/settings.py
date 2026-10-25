@@ -9,11 +9,12 @@ FRAUD_SRC = os.getenv("FRAUD_SRC", "/opt/airflow/fraud_src")
 
 CURRENT_DATASET = TRAINING_DIR / "current.parquet"
 PENDING_WINDOW = TRAINING_DIR / "pending_window.parquet"
+DQ_REPORTS_DIR = Path(os.getenv("DQ_REPORTS_DIR", "/opt/airflow/dq_reports"))
 BATCHES_DIR = TRAINING_DIR / "batches"
 SPLITS_DIR = TRAINING_DIR / "splits"
 SUPPLY_BATCH = TRAINING_DIR / "supply_batch.parquet"
 
 CAT_FEATURES = ["merch", "cat_id", "gender", "one_city", "us_state", "jobs"]
 LABEL = "target"
-SAMPLE_SIZE = 100_000
+SAMPLE_SIZE = 1000
 HISTORY_YEARS = 3

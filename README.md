@@ -164,6 +164,29 @@ docker compose exec airflow ls -la /opt/airflow/models
 
 ---
 
+## Data Quality датасета
+
+DAG `data_quality` (каждые 5 минут) проверяет текущий датасет обучения
+`current.parquet` и публикует HTML-отчёт в `/opt/airflow/dq_reports`
+(том `dq_reports`, рядом с каталогом моделей).
+
+Минимальный набор правил DQ:
+1. Датасет не пустой (`rows > 0`).
+2. Нет пропусков в критичных колонках: `transaction_time`, `target`, `amount`, `merch`, `cat_id`.
+3. `target` принимает только значения `0` или `1`.
+4. `amount >= 0`.
+5. `transaction_time` валиден и покрывает ровно 3 календарных месяца.
+6. Нет точных дублей строк.
+7. Доля фрода в диапазоне `[0.001, 0.2]`.
+8. Категориальные поля (`merch`, `gender`, `us_state`, `jobs`) непустые.
+
+Отчёт читать:
+```bash
+docker compose exec airflow ls -la /opt/airflow/dq_reports
+docker compose exec airflow cat /opt/airflow/dq_reports/latest.html
+```
+Или через браузер на хосте после копирования файла из контейнера.
+
 ## Как смотреть демонстрацию
 
 1. В Kafka UI топик `transactions` пополняется каждые 0.1 секунды, топик `scoring` — ответами модели.
