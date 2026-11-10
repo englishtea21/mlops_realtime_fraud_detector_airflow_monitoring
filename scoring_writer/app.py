@@ -11,7 +11,7 @@ from prometheus_client import Counter, Histogram, start_http_server
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-METRICS_PORT = int(os.getenv("METRICS_PORT", "8000"))
+METRICS_PORT = int(os.getenv("METRICS_PORT", ""))
 
 SCORES_WRITTEN = Counter(
     "scoring_writer_scores_written_total",
@@ -86,6 +86,7 @@ def insert_score(conn, data):
 
 
 def run_consumer():
+    start_http_server(METRICS_PORT)
     kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
     scoring_topic = os.getenv("KAFKA_SCORING_TOPIC")
 
@@ -143,6 +144,5 @@ def run_consumer():
 
 
 if __name__ == "__main__":
-    start_http_server(METRICS_PORT, addr="0.0.0.0")
     logger.info("Запуск потребителя и писателя в БД...")
     run_consumer()

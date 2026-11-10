@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 TRANSACTIONS_TOPIC = os.getenv("KAFKA_TRANSACTIONS_TOPIC", "transactions")
 SCORING_TOPIC = os.getenv("KAFKA_SCORING_TOPIC", "scoring")
-METRICS_PORT = int(os.getenv("METRICS_PORT", "8000"))
+METRICS_PORT = int(os.getenv("METRICS_PORT", ""))
 SCORE_BUCKETS = [i / 100.0 for i in range(101)]
 
 
@@ -68,9 +68,11 @@ class ProcessingService:
         self.consumer = Consumer(self.consumer_config)
         self.consumer.subscribe([TRANSACTIONS_TOPIC])
         self.producer = Producer(self.producer_config)
-        start_http_server(METRICS_PORT)
         self.fraud_transactions = 0
         self.total_transactions = 0
+        self._seen_model_version = None
+        start_http_server(METRICS_PORT)
+        logger.info("Prometheus метрики доступны на порту %s", METRICS_PORT)
 
     def _record_model_version(self, model_version):
         if self._seen_model_version is None:
@@ -89,7 +91,7 @@ class ProcessingService:
         self.total_transactions += 1
         score = float(y_proba[0])
         FRAUD_SCORE.observe(score)
-        if submission["fraud_flag"]:
+        if submission["fraud_flag"].iloc[0] == 1:
             self.fraud_transactions += 1
         FRAUD_RATIO.set(self.fraud_transactions / self.total_transactions)
 
@@ -107,7 +109,6 @@ class ProcessingService:
             processed_df = run_preproc(input_df)
             submission, y_proba, model_version = make_pred(processed_df, "kafka_stream")
             
-            self._record_fraud_statistics(submission, y_proba)
             self._record_model_version(model_version)
 
             # Добавляем ID и версию модели, которая отскорила запрос
@@ -120,6 +121,8 @@ class ProcessingService:
                 value=submission.to_json(orient="records"),
             )
             self.producer.flush()
+
+            self._record_fraud_statistics(submission, y_proba)
             TRANSACTIONS_PROCESSED.inc()
             return True
         except Exception as e:
@@ -139,7 +142,6 @@ class ProcessingService:
 
 
 if __name__ == "__main__":
-    start_http_server()
     logger.info("Starting Kafka ML scoring service...")
     ensure_bootstrap()
     service = ProcessingService()
