@@ -11,7 +11,7 @@ from catboost import CatBoostClassifier
 
 logger = logging.getLogger(__name__)
 
-THRESHOLD = 0.5
+THRESHOLD = float(os.getenv("FRAUD_THRESHOLD", 0.5))
 MODELS_DIR = Path(os.getenv("MODELS_DIR", "/models"))
 BUNDLED_MODEL = Path(os.getenv("BUNDLED_MODEL_PATH", "/app/models/my_catboost.cbm"))
 
