@@ -273,3 +273,5 @@ volumes:
   model_registry:
   dq_reports:
   airflow_state:
+  prometheus_data:
+  grafana_data:

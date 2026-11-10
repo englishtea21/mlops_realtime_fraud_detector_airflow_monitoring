@@ -1,13 +1,37 @@
 import json
 import logging
 import os
+import time
 
 import psycopg2
 from confluent_kafka import Consumer
+from prometheus_client import Counter, Histogram, start_http_server
 
 # Настройка логгирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+METRICS_PORT = int(os.getenv("METRICS_PORT", "8000"))
+
+SCORES_WRITTEN = Counter(
+    "scoring_writer_scores_written_total",
+    "Number of scores successfully committed to PostgreSQL",
+)
+# использую неравномерную шкалу, потому что временные статистики обычно распределены экспоненциально
+WRITE_DURATION = Histogram(
+    "scoring_writer_write_duration_seconds",
+    "Time to insert and commit one score to PostgreSQL, in seconds",
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+)
+FRAUD_WRITTEN = Counter(
+    "scoring_writer_fraud_written_total",
+    "Number of committed scores with fraud_flag equal to 1",
+)
+WRITTEN_SCORES = Histogram(
+    "scoring_writer_score",
+    "Distribution of scores successfully committed to PostgreSQL",
+    buckets=tuple(i / 100 for i in range(101)),
+)
 
 
 def get_db_config():
@@ -40,6 +64,7 @@ def create_table(conn):
 
 
 def insert_score(conn, data):
+    started = time.perf_counter()
     with conn.cursor() as cur:
         cur.execute("""
             INSERT INTO scores (transaction_id, score, fraud_flag, model_version)
@@ -51,6 +76,13 @@ def insert_score(conn, data):
             data.get("model_version"),
         ))
         conn.commit()
+
+    # Count only committed rows; failed writes do not change these metrics.
+    WRITE_DURATION.observe(time.perf_counter() - started)
+    SCORES_WRITTEN.inc()
+    if data["fraud_flag"] == 1:
+        FRAUD_WRITTEN.inc()
+    WRITTEN_SCORES.observe(data["score"])
 
 
 def run_consumer():
@@ -111,5 +143,6 @@ def run_consumer():
 
 
 if __name__ == "__main__":
+    start_http_server(METRICS_PORT, addr="0.0.0.0")
     logger.info("Запуск потребителя и писателя в БД...")
     run_consumer()
