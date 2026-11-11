@@ -124,6 +124,7 @@ class ProcessingService:
             submission["transaction_id"] = transaction_id
             submission["model_version"] = model_version
             submission["cat_id"] = data["data"].get("cat_id")
+            submission["amount"] = data["data"].get("amount")
 
             # Отправка результата в топик scoring
             self.producer.produce(

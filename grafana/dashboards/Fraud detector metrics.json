@@ -722,6 +722,123 @@
       ],
       "title": "Fraud rate among categories, last 1000 transactions only",
       "type": "barchart"
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Доля фродовых денег",
+      "description": "Доля суммы фродовых транзакций в общей сумме за выбранный период.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres-scores"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 37
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "min": 0,
+          "noValue": "Нет данных",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres-scores"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  SUM(amount * fraud_flag) / NULLIF(SUM(amount), 0) AS fraud_money_ratio\nFROM public.scores\nWHERE $__timeFilter(created_at);"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Сумма денег, помеченных как фрод",
+      "description": "Сумма транзакций, помеченных моделью как фрод, за выбранный период.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres-scores"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 37
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "min": 0,
+          "noValue": "Нет данных",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres-scores"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT SUM(amount * fraud_flag) AS flagged_amount\nFROM public.scores\nWHERE $__timeFilter(created_at);"
+        }
+      ]
     }
   ],
   "preload": false,
