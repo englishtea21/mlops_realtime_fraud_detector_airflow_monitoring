@@ -123,6 +123,7 @@ class ProcessingService:
             # Добавляем ID и версию модели, которая отскорила запрос
             submission["transaction_id"] = transaction_id
             submission["model_version"] = model_version
+            submission["cat_id"] = data["data"].get("cat_id")
 
             # Отправка результата в топик scoring
             self.producer.produce(
