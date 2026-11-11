@@ -45,17 +45,27 @@ run_as_airflow airflow users create \
   --email admin@example.com \
   || true
 
-# Если активной модели ещё нет, триггерим обучение при старте Airflow.
+# Если модели нет, ждём регистрации DAG и успешного запуска обучения.
 (
   for i in $(seq 1 60); do
-    if run_as_airflow airflow dags list >/dev/null 2>&1; then
-      if [ ! -s /opt/airflow/models/latest.txt ]; then
-        run_as_airflow airflow dags trigger retrain_catboost >/dev/null 2>&1 || true
+    if [ -s /opt/airflow/models/latest.txt ]; then
+      bootstrap_model_version="$(cat /opt/airflow/models/latest.txt)"
+      if [ -s "/opt/airflow/models/my_catboost_${bootstrap_model_version}.cbm" ]; then
+        exit 0
       fi
-      break
     fi
+
+    # Проверяем конкретный DAG: успешный `dags list` ещё не означает,
+    # что scheduler зарегистрировал retrain_catboost в metadata DB.
+    if run_as_airflow airflow dags unpause retrain_catboost >/dev/null 2>&1 &&
+       run_as_airflow airflow dags trigger retrain_catboost; then
+      echo "Активной модели нет: обучение retrain_catboost запущено."
+      exit 0
+    fi
+
     sleep 2
   done
+  echo "Не удалось запустить первое обучение. Проверьте регистрацию DAG retrain_catboost и логи Airflow." >&2
 ) &
 
 exec /usr/sbin/runuser --preserve-environment --user airflow -- /entrypoint standalone

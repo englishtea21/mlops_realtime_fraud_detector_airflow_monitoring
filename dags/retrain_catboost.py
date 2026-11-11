@@ -3,7 +3,7 @@
 Файл только связывает задачи. Логика каждой задачи лежит в pipeline.retrain.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import pendulum
 
 from airflow.decorators import dag, task
@@ -18,13 +18,14 @@ from pipeline.retrain.time_train_test_split import time_train_test_split
 
 @dag(
     dag_id="retrain_catboost",
-    description="Раз в 5 минут сдвигает 3-месячное окно и переобучает CatBoost",
-    schedule="*/1 * * * *",
+    description="Каждую минуту сдвигает 3-месячное окно и переобучает CatBoost",
+    schedule="* * * * *",
     start_date=pendulum.datetime(
         2026, 1, 1,
         tz="Europe/Moscow",
     ),
     catchup=False,
+    is_paused_upon_creation=False,
     max_active_runs=1,
     dagrun_timeout=timedelta(minutes=15),
     default_args={"retries": 1, "retry_delay": timedelta(seconds=30)},
