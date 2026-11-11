@@ -7,7 +7,7 @@
           "uid": "fg3x097p7l3i8c"
         },
         "enable": true,
-        "expr": "model_version_updates_total unless model_version_updates_total offset 30s",
+        "expr": "(model_version_updates_total{job=\"fraud_detector\"} - (model_version_updates_total{job=\"fraud_detector\"} offset 30s or model_version_updates_total{job=\"fraud_detector\"} * 0)) > 0",
         "hide": false,
         "iconColor": "red",
         "name": "Смена модели",
@@ -41,10 +41,13 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 0.8
               }
             ]
-          }
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         }
       },
       "gridPos": {
@@ -79,15 +82,16 @@
             "uid": "fg3x097p7l3i8c"
           },
           "editorMode": "builder",
-          "expr": "fraud_ratio",
+          "expr": "fraud_ratio{job=\"fraud_detector\"}",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Fraud ratio",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "Fraud rate",
-      "type": "stat"
+      "type": "stat",
+      "description": "Доля транзакций с fraud_flag=1 среди успешно обработанных с запуска процесса. Порог задаётся FRAUD_DETECTOR_THRESHOLD."
     },
     {
       "datasource": {
@@ -112,7 +116,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "ops"
         }
       },
       "gridPos": {
@@ -147,9 +152,9 @@
             "uid": "fg3x097p7l3i8c"
           },
           "editorMode": "builder",
-          "expr": "rate(scoring_transactions_processed_total[1m])",
+          "expr": "rate(scoring_transactions_processed_total{job=\"fraud_detector\"}[$__rate_interval])",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Transactions/s",
           "range": true,
           "refId": "B"
         }
@@ -213,7 +218,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "s",
+          "min": 0
         }
       },
       "gridPos": {
@@ -244,15 +251,16 @@
             "uid": "fg3x097p7l3i8c"
           },
           "editorMode": "code",
-          "expr": "rate(transaction_processing_seconds_sum[1m])\n/\nrate(transaction_processing_seconds_count[1m])",
+          "expr": "rate(transaction_processing_seconds_sum{job=\"fraud_detector\"}[$__rate_interval]) / rate(transaction_processing_seconds_count{job=\"fraud_detector\"}[$__rate_interval])",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Mean scoring duration",
           "range": true,
           "refId": "B"
         }
       ],
       "title": "Seconds per transaction scoring",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Среднее время вызова process_message, включая неудачные попытки обработки."
     },
     {
       "datasource": {
@@ -296,7 +304,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1e-09
         },
         "legend": {
           "placement": "bottom",
@@ -311,8 +319,10 @@
         },
         "yAxis": {
           "axisPlacement": "left",
-          "max": "1",
-          "reverse": false
+          "max": 1,
+          "reverse": false,
+          "min": 0,
+          "unit": "short"
         }
       },
       "pluginVersion": "13.3.1",
@@ -324,21 +334,22 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (le) (\n  rate(fraud_score_bucket[$__rate_interval])\n)\n/\nscalar(\n  sum(rate(fraud_score_count[$__rate_interval]))\n)",
+          "expr": "sum by (le) (rate(fraud_score_bucket{job=\"fraud_detector\"}[$__rate_interval]))\n/\nscalar(sum(rate(fraud_score_count{job=\"fraud_detector\"}[$__rate_interval])))",
           "format": "heatmap",
           "instant": false,
-          "interval": "5s",
-          "legendFormat": "__auto",
+          "interval": "1s",
+          "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Fraude scores distribution",
-      "type": "heatmap"
+      "title": "Fraud scores distribution",
+      "type": "heatmap",
+      "description": "Цвет — доля наблюдений в интервале скоров за скользящее окно. Формат Heatmap преобразует накопительные бакеты в отдельные интервалы; 0.1 соответствует 10% наблюдений."
     }
   ],
   "preload": false,
-  "refresh": "5s",
+  "refresh": "1s",
   "schemaVersion": 42,
   "time": {
     "from": "now-15m",

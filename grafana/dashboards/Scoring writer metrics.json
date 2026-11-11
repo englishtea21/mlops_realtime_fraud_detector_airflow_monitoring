@@ -7,7 +7,7 @@
           "uid": "fg3x097p7l3i8c"
         },
         "enable": true,
-        "expr": "model_version_updates_total unless model_version_updates_total offset 30s",
+        "expr": "(model_version_updates_total{job=\"fraud_detector\"} - (model_version_updates_total{job=\"fraud_detector\"} offset 30s or model_version_updates_total{job=\"fraud_detector\"} * 0)) > 0",
         "hide": false,
         "iconColor": "red",
         "name": "Смена модели",
@@ -44,7 +44,10 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "short",
+          "decimals": 0,
+          "min": 0
         }
       },
       "gridPos": {
@@ -79,14 +82,15 @@
             "uid": "fg3x097p7l3i8c"
           },
           "editorMode": "code",
-          "expr": "scoring_writer_fraud_written_total",
-          "legendFormat": "writes per second",
+          "expr": "scoring_writer_fraud_written_total{job=\"scoring_writer\"}",
+          "legendFormat": "Fraud detected",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "Fraud detected",
-      "type": "stat"
+      "type": "stat",
+      "description": "Число транзакций с fraud_flag=1, успешно записанных с запуска writer. Это счётчик, а не скорость."
     },
     {
       "datasource": {
@@ -110,7 +114,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "ops"
         }
       },
       "gridPos": {
@@ -145,7 +150,7 @@
             "uid": "fg3x097p7l3i8c"
           },
           "editorMode": "code",
-          "expr": "rate(scoring_writer_scores_written_total[$__rate_interval])",
+          "expr": "rate(scoring_writer_scores_written_total{job=\"scoring_writer\"}[$__rate_interval])",
           "legendFormat": "writes per second",
           "range": true,
           "refId": "A"
@@ -196,7 +201,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1e-09
         },
         "legend": {
           "placement": "bottom",
@@ -212,7 +217,8 @@
         "yAxis": {
           "axisPlacement": "left",
           "reverse": false,
-          "unit": ""
+          "unit": "s",
+          "min": 0
         }
       },
       "pluginVersion": "13.3.1",
@@ -224,18 +230,19 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (le) (\n  rate(scoring_writer_write_duration_seconds_bucket[$__rate_interval])\n)\n/\nscalar(\n  sum(rate(scoring_writer_write_duration_seconds_count[$__rate_interval]))\n)",
+          "expr": "sum by (le) (rate(scoring_writer_write_duration_seconds_bucket{job=\"scoring_writer\"}[$__rate_interval]))\n/\nscalar(sum(rate(scoring_writer_write_duration_seconds_count{job=\"scoring_writer\"}[$__rate_interval])))",
           "format": "heatmap",
           "instant": false,
-          "interval": "5s",
+          "interval": "1s",
           "legendFormat": "{{le}} s",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Write duration distribution in second",
+      "title": "Write duration distribution in seconds",
       "transparent": true,
-      "type": "heatmap"
+      "type": "heatmap",
+      "description": "Распределение времени успешного INSERT и commit. Ось Y — секунды, цвет — доля записей в интервале задержки."
     },
     {
       "datasource": {
@@ -279,7 +286,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1e-09
         },
         "legend": {
           "placement": "bottom",
@@ -294,8 +301,10 @@
         },
         "yAxis": {
           "axisPlacement": "left",
-          "max": "1",
-          "reverse": false
+          "max": 1,
+          "reverse": false,
+          "min": 0,
+          "unit": "short"
         }
       },
       "pluginVersion": "13.3.1",
@@ -307,24 +316,137 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (le) (\n  rate(scoring_writer_score_bucket[$__rate_interval])\n)\n/\nscalar(\n  sum(rate(scoring_writer_score_count[$__rate_interval]))\n)",
+          "expr": "sum by (le) (rate(scoring_writer_score_bucket{job=\"scoring_writer\"}[$__rate_interval]))\n/\nscalar(sum(rate(scoring_writer_score_count{job=\"scoring_writer\"}[$__rate_interval])))",
           "format": "heatmap",
           "instant": false,
-          "interval": "5s",
-          "legendFormat": "__auto",
+          "interval": "1s",
+          "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Written fraud scores distribution",
-      "type": "heatmap"
+      "title": "Written scores distribution",
+      "type": "heatmap",
+      "description": "Цвет — доля наблюдений в интервале скоров за скользящее окно. Формат Heatmap преобразует накопительные бакеты в отдельные интервалы; 0.1 соответствует 10% наблюдений."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fg3x097p7l3i8c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s",
+          "min": 0
+        }
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 8,
+        "y": 9
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "13.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fg3x097p7l3i8c"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(scoring_writer_write_duration_seconds_sum{job=\"scoring_writer\"}[$__rate_interval])) / sum(rate(scoring_writer_write_duration_seconds_count{job=\"scoring_writer\"}[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "Mean",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fg3x097p7l3i8c"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(scoring_writer_write_duration_seconds_bucket{job=\"scoring_writer\"}[$__rate_interval])))",
+          "instant": false,
+          "legendFormat": "p95",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Write duration: mean and p95",
+      "type": "timeseries",
+      "description": "Время INSERT и commit одной успешной записи. p95 оценивается по гистограмме."
     }
   ],
   "preload": false,
-  "refresh": "auto",
+  "refresh": "1s",
   "schemaVersion": 42,
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
