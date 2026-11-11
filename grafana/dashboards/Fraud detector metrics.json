@@ -2,16 +2,18 @@
   "annotations": {
     "list": [
       {
-        "builtIn": 1,
         "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
+          "type": "prometheus",
+          "uid": "fg3x097p7l3i8c"
         },
         "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
+        "expr": "model_version_updates_total unless model_version_updates_total offset 30s",
+        "hide": false,
+        "iconColor": "red",
+        "name": "Смена модели",
+        "step": "1s",
+        "textFormat": "Скоринг перешёл на {{version}}",
+        "titleFormat": "Модель {{version}}"
       }
     ]
   },
