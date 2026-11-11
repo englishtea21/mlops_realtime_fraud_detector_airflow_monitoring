@@ -32,7 +32,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "links": [],
   "liveNow": false,
   "panels": [
     {
@@ -62,8 +61,7 @@
             ]
           },
           "unit": "percentunit"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
         "h": 9,
@@ -143,8 +141,7 @@
             ]
           },
           "unit": "ops"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
         "h": 9,
@@ -214,8 +211,7 @@
             ]
           },
           "unit": "s"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
         "h": 9,
@@ -277,8 +273,7 @@
               "type": "linear"
             }
           }
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
         "h": 9,
@@ -369,8 +364,7 @@
             ]
           },
           "unit": "opm"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
         "h": 9,
@@ -440,8 +434,7 @@
             ]
           },
           "unit": "percent"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
         "h": 9,
@@ -496,20 +489,11 @@
       "type": "gauge"
     },
     {
-      "id": 7,
-      "type": "table",
-      "title": "Scores and fraud by model version (PostgreSQL)",
-      "description": "Данные из PostgreSQL за выбранный период дашборда. Число строк scores и доля fraud_flag=1 по версии модели. Это сохранённые результаты классификации, а не подтверждённый фрод или оценка качества модели.",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "postgres-scores"
       },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 18
-      },
+      "description": "Данные из PostgreSQL за выбранный период дашборда. Число строк scores и доля fraud_flag=1 по версии модели. Это сохранённые результаты классификации, а не подтверждённый фрод или оценка качества модели.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -517,9 +501,24 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
-          "mappings": []
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
         },
         "overrides": [
           {
@@ -584,21 +583,21 @@
           }
         ]
       },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false,
-          "reducer": [
-            "sum"
-          ],
-          "countRows": false,
-          "fields": ""
-        }
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 18
       },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "zebraStriping": false
+      },
+      "pluginVersion": "13.3.1",
       "targets": [
         {
-          "refId": "A",
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "postgres-scores"
@@ -606,18 +605,128 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  COALESCE(NULLIF(model_version, ''), 'unknown') AS model_version,\n  COUNT(*) AS scores_count,\n  COUNT(*) FILTER (WHERE fraud_flag = 1)::double precision\n    / COUNT(*) AS fraud_ratio\nFROM public.scores\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY MAX(created_at) DESC;"
+          "rawSql": "SELECT\n  COALESCE(NULLIF(model_version, ''), 'unknown') AS model_version,\n  COUNT(*) AS scores_count,\n  COUNT(*) FILTER (WHERE fraud_flag = 1)::double precision\n    / COUNT(*) AS fraud_ratio\nFROM public.scores\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY MAX(created_at) DESC;",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "Scores and fraud by model version (PostgreSQL)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres-scores"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#73BF69",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 8,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "13.3.1",
+      "targets": [
+        {
+          "dataset": "fraud_db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres-scores"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH recent AS (\n  SELECT cat_id, fraud_flag\n  FROM public.scores\n  ORDER BY created_at DESC\n  LIMIT 1000\n)\n\nSELECT\n  COALESCE(NULLIF(cat_id, ''), 'unk') AS cat_id,\n  SUM(CASE WHEN fraud_flag = 1 THEN 1 ELSE 0 END)::double precision / COUNT(*) AS fraud_ratio\nFROM recent\nGROUP BY cat_id\nORDER BY cat_id DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Fraud rate among categories, last 1000 transactions only",
+      "type": "barchart"
     }
   ],
   "preload": false,
-  "refresh": "5s",
+  "refresh": "auto",
   "schemaVersion": 42,
-  "tags": [],
-  "templating": {
-    "list": []
-  },
   "time": {
     "from": "now-5m",
     "to": "now"
@@ -638,8 +747,7 @@
   },
   "timezone": "browser",
   "title": "Fraud statistics",
-  "weekStart": "",
-  "version": 1,
+  "version": 6,
   "uid": "ad29kxz",
-  "id": 3893619700621312
+  "id": 3912347687469056
 }
