@@ -2,6 +2,18 @@
   "annotations": {
     "list": [
       {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
         "datasource": {
           "type": "prometheus",
           "uid": "fg3x097p7l3i8c"
@@ -20,6 +32,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "links": [],
   "liveNow": false,
   "panels": [
     {
@@ -27,11 +40,14 @@
         "type": "prometheus",
         "uid": "fg3x097p7l3i8c"
       },
+      "description": "Число транзакций с fraud_flag=1, успешно записанных с запуска writer. Это счётчик, а не скорость.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
+          "decimals": 0,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -45,10 +61,9 @@
               }
             ]
           },
-          "unit": "short",
-          "decimals": 0,
-          "min": 0
-        }
+          "unit": "short"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -89,8 +104,7 @@
         }
       ],
       "title": "Fraud detected",
-      "type": "stat",
-      "description": "Число транзакций с fraud_flag=1, успешно записанных с запуска writer. Это счётчик, а не скорость."
+      "type": "stat"
     },
     {
       "datasource": {
@@ -116,7 +130,8 @@
             ]
           },
           "unit": "ops"
-        }
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -164,6 +179,7 @@
         "type": "prometheus",
         "uid": "fg3x097p7l3i8c"
       },
+      "description": "Распределение времени успешного INSERT и commit. Ось Y — секунды, цвет — доля записей в интервале задержки.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -176,7 +192,8 @@
               "type": "linear"
             }
           }
-        }
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -201,7 +218,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-09
+          "le": 1e-9
         },
         "legend": {
           "placement": "bottom",
@@ -216,9 +233,9 @@
         },
         "yAxis": {
           "axisPlacement": "left",
+          "min": 0,
           "reverse": false,
-          "unit": "s",
-          "min": 0
+          "unit": "s"
         }
       },
       "pluginVersion": "13.3.1",
@@ -241,14 +258,14 @@
       ],
       "title": "Write duration distribution in seconds",
       "transparent": true,
-      "type": "heatmap",
-      "description": "Распределение времени успешного INSERT и commit. Ось Y — секунды, цвет — доля записей в интервале задержки."
+      "type": "heatmap"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "fg3x097p7l3i8c"
       },
+      "description": "Цвет — доля наблюдений в интервале скоров за скользящее окно. Формат Heatmap преобразует накопительные бакеты в отдельные интервалы; 0.1 соответствует 10% наблюдений.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -261,7 +278,8 @@
               "type": "linear"
             }
           }
-        }
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -286,7 +304,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-09
+          "le": 1e-9
         },
         "legend": {
           "placement": "bottom",
@@ -302,8 +320,8 @@
         "yAxis": {
           "axisPlacement": "left",
           "max": 1,
-          "reverse": false,
           "min": 0,
+          "reverse": false,
           "unit": "short"
         }
       },
@@ -326,14 +344,14 @@
         }
       ],
       "title": "Written scores distribution",
-      "type": "heatmap",
-      "description": "Цвет — доля наблюдений в интервале скоров за скользящее окно. Формат Heatmap преобразует накопительные бакеты в отдельные интервалы; 0.1 соответствует 10% наблюдений."
+      "type": "heatmap"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "fg3x097p7l3i8c"
       },
+      "description": "Время INSERT и commit одной успешной записи. p95 оценивается по гистограмме.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -373,6 +391,7 @@
               "mode": "off"
             }
           },
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -386,9 +405,9 @@
               }
             ]
           },
-          "unit": "s",
-          "min": 0
-        }
+          "unit": "s"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -438,13 +457,16 @@
         }
       ],
       "title": "Write duration: mean and p95",
-      "type": "timeseries",
-      "description": "Время INSERT и commit одной успешной записи. p95 оценивается по гистограмме."
+      "type": "timeseries"
     }
   ],
   "preload": false,
   "refresh": "1s",
   "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
   "time": {
     "from": "now-15m",
     "to": "now"
@@ -465,7 +487,8 @@
   },
   "timezone": "browser",
   "title": "Scoring writer statistics",
-  "version": 3,
+  "weekStart": "",
+  "version": 1,
   "uid": "adtkbkk",
-  "id": 3858639897968640
+  "id": 3893619805478912
 }

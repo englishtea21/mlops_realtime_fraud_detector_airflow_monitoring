@@ -24,6 +24,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Set kafka configuration file
+THRESHOLD = float(os.getenv("FRAUD_THRESHOLD", ""))
+AROUND_THRESHOLD_RADIUS = float(os.getenv("FRAUD_AROUND_THRESHOLD_RADIUS", ""))
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 TRANSACTIONS_TOPIC = os.getenv("KAFKA_TRANSACTIONS_TOPIC", "transactions")
 SCORING_TOPIC = os.getenv("KAFKA_SCORING_TOPIC", "scoring")
@@ -48,6 +50,8 @@ FRAUD_RATIO = Gauge(
     "fraud_ratio",
     "Соотношение мошеннических транзакций к общему числу",
 )
+FRAUD_COUNT = Counter("scoring_fraud_transactions_total", "Число растущего фрода по порогу")
+AROUND_THRESHOLD_COUNT = Counter("scoring_near_threshold_total", "Число пограничных относительно порога скорингов")
 MODEL_VERSION_UPDATES = Counter(
     "model_version_updates_total",
     "Смена версии модели при горячей подмене",
@@ -93,7 +97,12 @@ class ProcessingService:
         FRAUD_SCORE.observe(score)
         if submission["fraud_flag"].iloc[0] == 1:
             self.fraud_transactions += 1
+            FRAUD_COUNT.inc()
+
+        if abs(score - THRESHOLD) < AROUND_THRESHOLD_RADIUS:
+            AROUND_THRESHOLD_COUNT.inc()
         FRAUD_RATIO.set(self.fraud_transactions / self.total_transactions)
+        
 
     @PROCESSING_TIME.time()
     def process_message(self, msg):
@@ -108,7 +117,7 @@ class ProcessingService:
             # Препроцессинг и предсказание
             processed_df = run_preproc(input_df)
             submission, y_proba, model_version = make_pred(processed_df, "kafka_stream")
-            
+
             self._record_model_version(model_version)
 
             # Добавляем ID и версию модели, которая отскорила запрос

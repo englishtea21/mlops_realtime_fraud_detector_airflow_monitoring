@@ -62,6 +62,8 @@
             }
           },
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -74,9 +76,7 @@
               }
             ]
           },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -121,6 +121,7 @@
         "type": "prometheus",
         "uid": "fg3x097p7l3i8c"
       },
+      "description": "Использование памяти с учётом MemAvailable, включая память, которую ядро может освободить.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -157,6 +158,8 @@
             }
           },
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -169,9 +172,7 @@
               }
             ]
           },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -209,14 +210,14 @@
         }
       ],
       "title": "Memory Utilization",
-      "type": "timeseries",
-      "description": "Использование памяти с учётом MemAvailable, включая память, которую ядро может освободить."
+      "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "fg3x097p7l3i8c"
       },
+      "description": "Трафик интерфейсов сетевого namespace Node Exporter. При bridge-сети это не весь сетевой трафик хоста.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -315,8 +316,7 @@
         }
       ],
       "title": "Network Traffic",
-      "type": "timeseries",
-      "description": "Трафик интерфейсов сетевого namespace Node Exporter. При bridge-сети это не весь сетевой трафик хоста."
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -440,5 +440,5 @@
   "weekStart": "",
   "version": 1,
   "uid": "node-metrics",
-  "id": 3862220796387328
+  "id": 3893619738370048
 }
