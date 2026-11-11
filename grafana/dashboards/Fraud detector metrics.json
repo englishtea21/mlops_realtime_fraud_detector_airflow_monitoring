@@ -494,6 +494,121 @@
       ],
       "title": "Scorings near threshold",
       "type": "gauge"
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Scores and fraud by model version (PostgreSQL)",
+      "description": "Данные из PostgreSQL за выбранный период дашборда. Число строк scores и доля fraud_flag=1 по версии модели. Это сохранённые результаты классификации, а не подтверждённый фрод или оценка качества модели.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres-scores"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "model_version"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Версия модели"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "scores_count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Число скоров"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "fraud_ratio"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Доля фрода"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "countRows": false,
+          "fields": ""
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres-scores"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  COALESCE(NULLIF(model_version, ''), 'unknown') AS model_version,\n  COUNT(*) AS scores_count,\n  COUNT(*) FILTER (WHERE fraud_flag = 1)::double precision\n    / COUNT(*) AS fraud_ratio\nFROM public.scores\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY MAX(created_at) DESC;"
+        }
+      ]
     }
   ],
   "preload": false,

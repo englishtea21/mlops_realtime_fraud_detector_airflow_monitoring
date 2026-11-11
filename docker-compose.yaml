@@ -250,8 +250,16 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     networks:
       - ml-scorer
 

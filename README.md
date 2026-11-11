@@ -183,7 +183,7 @@ docker compose exec postgres psql -U fraud_user -d fraud_db
 
 | Дашборд | Прямая ссылка | Панели |
 |--------|---------------|--------|
-| **Fraud statistics** | http://localhost:3000/d/ad29kxz | `Fraud rate`, `Transactions per second`, `Seconds per transaction scoring`, `Fraud scores distribution`; аннотация `Смена модели` |
+| **Fraud statistics** | http://localhost:3000/d/ad29kxz | Технические метрики скоринга, аннотация `Смена модели` и SQL-таблица `Scores and fraud by model version (PostgreSQL)` |
 | **Scoring writer statistics** | http://localhost:3000/d/adtkbkk | `Fraud detected`, `Writes per second`, `Write duration distribution in seconds`, `Written scores distribution`, `Write duration: mean and p95` |
 | **Node Metrics** | http://localhost:3000/d/node-metrics | `CPU Utilization`, `Memory Utilization`, `Network Traffic`, `Disk I/O` |
 
@@ -196,6 +196,10 @@ docker compose exec postgres psql -U fraud_user -d fraud_db
 - `grafana/provisioning/datasources/prometheus.yaml` создаёт источник
   `Prometheus` с адресом `http://prometheus:9090`, UID `fg3x097p7l3i8c`
   и интервалом сбора `1s`. Этот UID совпадает со ссылками в трёх JSON.
+- `grafana/provisioning/datasources/postgres.yaml` создаёт источник
+  `PostgreSQL` с UID `postgres-scores`. Адрес и учётные данные передаются
+  из `.env` в окружение Grafana через Compose; пароль хранится в
+  `secureJsonData`, а не в JSON дашборда. По умолчанию адрес — `postgres:5432`.
 - `grafana/provisioning/dashboards/dashboards.yaml` загружает JSON из
   `/var/lib/grafana/dashboards` и проверяет изменения примерно каждые 20 секунд.
 - `grafana/dashboards/*.json` содержат экспортированные панели и PromQL-запросы.
@@ -212,6 +216,52 @@ docker compose restart grafana
 
 Логин и пароль `admin` / `admin` относятся к новой установке. Если пароль
 уже меняли, Grafana сохранит его в томе `grafana_data`.
+
+### Срез PostgreSQL по версиям модели
+
+На дашборде **Fraud statistics**, под техническими панелями, находится таблица
+**Scores and fraud by model version (PostgreSQL)**. Она обращается к PostgreSQL
+напрямую, без Prometheus, и показывает:
+
+- версию модели;
+- число сохранённых скоров;
+- долю транзакций, которые эта версия пометила как фрод (`fraud_flag = 1`).
+
+Таблица учитывает выбранный период дашборда по колонке `created_at`.
+Если нужной версии нет, расширьте период, например до последних 24 часов.
+Доля фрода — результат решений модели с настроенным порогом, а не доля
+подтверждённых мошеннических операций и не метрика качества модели.
+SQL-запрос находится в JSON панели:
+
+```sql
+SELECT
+  COALESCE(NULLIF(model_version, ''), 'unknown') AS model_version,
+  COUNT(*) AS scores_count,
+  COUNT(*) FILTER (WHERE fraud_flag = 1)::double precision
+    / COUNT(*) AS fraud_ratio
+FROM public.scores
+WHERE $__timeFilter(created_at)
+GROUP BY 1
+ORDER BY MAX(created_at) DESC;
+```
+
+`$__timeFilter(created_at)` подставляет границы времени из Grafana.
+Приведение к `double precision` даёт дробную долю вместо целочисленного деления;
+единица `Percent (0.0–1.0)` отображает её в процентах.
+После публикации новой модели и записи её первого результата в таблице
+появится новая строка. При работающем потоке число скоров активной версии растёт.
+
+Если проект уже запущен, примените новые переменные окружения Grafana
+пересозданием её контейнера:
+
+```bash
+docker compose up -d --no-deps --force-recreate grafana
+```
+
+В **Connections → Data sources → PostgreSQL** проверьте соединение через
+**Save & test**. На первом запуске таблица `scores` создаётся сервисом
+`scoring_writer`; дождитесь его старта и появления записей. Если соединение
+есть, но строк нет, проверьте поток и диапазон времени дашборда.
 
 ## Список метрик
 
